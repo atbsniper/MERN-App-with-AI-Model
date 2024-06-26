@@ -54,14 +54,14 @@ export default function Home() {
       <h2 className="text-2xl mb-4 text-center">Next.js template</h2>
 
       <input
-        className="w-full max-w-xs p-2 border border-gray-300 rounded mb-4"
+        className="w-full max-w-xs p-2 border border-gray-300 rounded text-black mb-4"
         type="text"
         placeholder="Enter text here"
         onInput={e => classify(e.target.value)}
       />
 
       {ready !== null && (
-        <pre className="bg-gray-100 p-2 rounded">
+        <pre className="bg-gray-100 p-2 rounded text-black">
           { (!ready || !result) ? 'Loading...' : JSON.stringify(result, null, 2) }
         </pre>
       )}
