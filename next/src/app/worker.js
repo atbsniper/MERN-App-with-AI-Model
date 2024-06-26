@@ -36,3 +36,12 @@ self.addEventListener('message', async (event) => {
         output: output,
     });
 });
+
+// public/worker.js
+onmessage = function(e) {
+    // Simulate different statuses for demonstration purposes
+    setTimeout(() => postMessage({ status: 'initiate' }), 1000);
+    setTimeout(() => postMessage({ status: 'ready' }), 2000);
+    setTimeout(() => postMessage({ status: 'complete', output: ['Classification Result'] }), 3000);
+  };
+  
