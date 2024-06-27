@@ -1,47 +1,38 @@
-import { pipeline, env } from "@xenova/transformers";
+// worker.js
 
-// Skip local model check
-env.allowLocalModels = false;
+import { AutoTokenizer, AutoModelForCausalLM } from '@xenova/transformers';
 
-// Use the Singleton pattern to enable lazy construction of the pipeline.
-class PipelineSingleton {
-    static task = 'text-classification';
-    static model = 'Xenova/distilbert-base-uncased-finetuned-sst-2-english';
-    static instance = null;
+// Initialize tokenizer and model
+const tokenizer = new AutoTokenizer();
+const model = new AutoModelForCausalLM();
 
-    static async getInstance(progress_callback = null) {
-        if (this.instance === null) {
-            this.instance = pipeline(this.task, this.model, { progress_callback });
-        }
-        return this.instance;
+self.addEventListener('message', async (e) => {
+  const { text, status } = e.data;
+
+  if (status === 'initiate') {
+    // Handle initialization message if needed
+    self.postMessage({ status: 'loading' });
+    // Example: Load models or prepare any setup needed
+    await model.load(); // Ensure model is loaded before marking as ready
+    self.postMessage({ status: 'ready' });
+    return;
+  }
+
+  try {
+    // Example: Handle different messages
+    if (status === 'generate_code') {
+      // Tokenize the input text
+      const inputs = tokenizer.encode(text);
+      
+      // Generate code based on the input
+      const sample = await model.generate(inputs, { max_length: 128 });
+      const generatedText = tokenizer.decode(sample);
+
+      // Send the generated code back to the main thread
+      self.postMessage({ status: 'complete', output: generatedText });
     }
-}
-
-// Listen for messages from the main thread
-self.addEventListener('message', async (event) => {
-    // Retrieve the classification pipeline. When called for the first time,
-    // this will load the pipeline and save it for future use.
-    let classifier = await PipelineSingleton.getInstance(x => {
-        // We also add a progress callback to the pipeline so that we can
-        // track model loading.
-        self.postMessage(x);
-    });
-
-    // Actually perform the classification
-    let output = await classifier(event.data.text);
-
-    // Send the output back to the main thread
-    self.postMessage({
-        status: 'complete',
-        output: output,
-    });
+  } catch (error) {
+    console.error('Error generating code:', error);
+    self.postMessage({ status: 'error', message: 'Failed to generate code' });
+  }
 });
-
-// public/worker.js
-onmessage = function(e) {
-    // Simulate different statuses for demonstration purposes
-    setTimeout(() => postMessage({ status: 'initiate' }), 1000);
-    setTimeout(() => postMessage({ status: 'ready' }), 2000);
-    setTimeout(() => postMessage({ status: 'complete', output: ['Classification Result'] }), 3000);
-  };
-  
